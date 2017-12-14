@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.lesson.vv_bobkov.a2l4_bobkov.Exceptions.DBCursorIsEmptyException;
 import com.lesson.vv_bobkov.a2l4_bobkov.Exceptions.DBCursorIsNullExceptions;
 import com.lesson.vv_bobkov.a2l4_bobkov.Exceptions.DBNewVersionLessOldExceptions;
 import com.lesson.vv_bobkov.a2l4_bobkov.Exceptions.DBRecordsDeletingExceptions;
@@ -33,11 +34,11 @@ class NotesTable {
     private static final String
             SQL_COMMAND_DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
 
-    public static void createTable(SQLiteDatabase db) {
+    static void createTable(SQLiteDatabase db) {
         db.execSQL(SQL_COMMAND_CREATE_TABLE);
     }
 
-    public static void upgrade(SQLiteDatabase db, final int oldVersion, final int newVersion)
+    static void upgrade(SQLiteDatabase db, final int oldVersion, final int newVersion)
             throws DBNewVersionLessOldExceptions {
         if (oldVersion > newVersion) {
             String excMsg = "The new db version less then there old version";
@@ -47,7 +48,7 @@ class NotesTable {
         db.execSQL(SQL_COMMAND_CREATE_TABLE);
     }
 
-    public static long addRecord(SQLiteDatabase db, final NoteWithTitle record) {
+    static long addRecord(SQLiteDatabase db, final NoteWithTitle record) {
         ContentValues cv = new ContentValues();
         cv.put(FIELD_TITLE, record.getmTitle());
         cv.put(FIELD_ADDRESS, record.getmAddress());
@@ -65,7 +66,7 @@ class NotesTable {
         return addadRecord;
     }
 
-    public static void updateRecord(SQLiteDatabase db, final int id,
+    static void updateRecord(SQLiteDatabase db, final int id,
                                     final NoteWithTitle newRecord) {
         ContentValues cv = new ContentValues();
         cv.put(FIELD_TITLE, newRecord.getmTitle());
@@ -84,7 +85,7 @@ class NotesTable {
         }
     }
 
-    public static void deleteRecord(SQLiteDatabase db, final long[] ides)
+    static void deleteRecord(SQLiteDatabase db, final long[] ides)
             throws DBRecordsDeletingExceptions {
         for (long id :
                 ides) {
@@ -95,15 +96,16 @@ class NotesTable {
         }
     }
 
-    public static ArrayList<NoteWithTitle> createNoteWithTitleArrayListFromBd(final SQLiteDatabase db)
-            throws DBCursorIsEmpty, DBCursorIsNullExceptions {
+    static ArrayList<NoteWithTitle> createNoteWithTitleArrayListFromBd(final SQLiteDatabase db)
+            throws DBCursorIsEmptyException, DBCursorIsNullExceptions {
         Cursor cursor = db.query(TABLE_NAME, null, null, null, null, null, null);
         String excMsg = "The cursor is null";
         if (cursor == null) {
             throw new DBCursorIsNullExceptions(excMsg);
         } else if (cursor.getCount() < 1) {
+            if (!cursor.isClosed()) cursor.close();
             excMsg = "The cursor is empty";
-            throw new DBCursorIsEmpty(excMsg);
+            throw new DBCursorIsEmptyException(excMsg);
         }
         ArrayList<NoteWithTitle> noteWithTitleList = new ArrayList<>();
         if (cursor.moveToFirst()) {
@@ -116,6 +118,7 @@ class NotesTable {
                 ));
             } while (cursor.moveToNext());
         }
+        if (!cursor.isClosed())cursor.close();
         return noteWithTitleList;
     }
 }
